@@ -1,6 +1,8 @@
 package com.amazon.ata.attendance.management;
 
+import com.amazon.ata.attendance.participants.Participant;
 import com.amazon.ata.attendance.participants.ParticipantManager;
+import com.amazon.ata.set.ATASet;
 
 import java.time.LocalDate;
 
@@ -14,6 +16,8 @@ public class WeeklyRosterManager {
     private ParticipantManager manager;
 
     // Participants - decide on how to track the state of the WeeklyRosterManager and include it here
+    private ATASet<Participant> tuesdayParticipants;
+    private ATASet<Participant> thursdayParticipants;
 
 
     /**
@@ -25,6 +29,8 @@ public class WeeklyRosterManager {
     public WeeklyRosterManager(LocalDate weekOfDate, ParticipantManager participantManager) {
         mondayOfTeachingWeek = weekOfDate;
         manager = participantManager;
+        tuesdayParticipants = new ATASet<>(34);
+        thursdayParticipants = new ATASet<>(34);
     }
 
     /**
@@ -43,8 +49,8 @@ public class WeeklyRosterManager {
         sectionManager.addParticipantsToSection(SectionDay.THURSDAY, "30,31,32,33,34,35,36,37,38,39,40,41,42,43," +
             "44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59");
 
-
         System.out.println("\nMarking participants as absent.");
+
         // Mark Brian Oller absent from correct section
         boolean brianMarkedAbsent = sectionManager.scheduleAbsence(SectionDay.TUESDAY, 7);
         checkEquals(true, brianMarkedAbsent,
@@ -109,6 +115,20 @@ public class WeeklyRosterManager {
      */
     private void addParticipantsToSection(SectionDay section, String participantList) {
         // ATA Participants - implement
+        String[] participantIds = participantList.split(",");
+        for (String idString : participantIds) {
+            Long id = Long.parseLong(idString);
+            Participant participant = manager.lookupParticipantById(id);
+            if (section == SectionDay.TUESDAY) {
+                if (!tuesdayParticipants.add(participant)) {
+                    System.out.println("Failed to add participant with id: " + id);
+                }
+            } else {
+                if (!thursdayParticipants.add(participant)) {
+                        System.out.println("Failed to add participant with id: " + id);
+                    }
+            }
+        }
     }
 
     /**
@@ -117,7 +137,16 @@ public class WeeklyRosterManager {
      * Prints roster of attendees for both TUESDAY and THURSDAY sections, see README for an example.
      */
     public void printSectionRosters() {
-        // ATA Participants - implement
+        System.out.printf("%s participants attending class on the Tuesday of: %s\n\n",
+                this.tuesdayParticipants, this.mondayOfTeachingWeek);
+        for (Participant participant : tuesdayParticipants) {
+            System.out.println(participant);
+        }
+        System.out.printf("\n%s participants attending class on the Thursday of: %s\n\n",
+                this.thursdayParticipants, this.mondayOfTeachingWeek);
+        for (Participant participant : thursdayParticipants) {
+            System.out.println(participant);
+        }
     }
 
     /**
@@ -130,8 +159,12 @@ public class WeeklyRosterManager {
      * @return true if the participant was successful removed, false otherwise
      */
     public boolean scheduleAbsence(SectionDay attendedSection, long participantId) {
-        // ATA Participants - implement
-        return false;
+       Participant participant = manager.lookupParticipantById(participantId);
+       if (attendedSection == SectionDay.TUESDAY) {
+           return tuesdayParticipants.remove(participant);
+       } else {
+           return thursdayParticipants.remove(participant);
+       }
     }
 
     /**
